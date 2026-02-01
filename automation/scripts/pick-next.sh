@@ -16,6 +16,16 @@ OPTIONAL_CONSTRAINTS="${4:-}"        # free text
 
 INDEX_URL="https://leetcode.ca/all/problems.html"
 
+extract_index_tsv() {
+  perl -0777 -ne '
+    while (/<tr[^>]*>\s*<td[^>]*>\s*(\d+)\s*<\/td>\s*<td[^>]*>\s*<a[^>]*>([^<]+)<\/a>\s*<\/td>\s*<td[^>]*>\s*(Easy|Medium|Hard)\s*<\/td>/sg) {
+      my ($id, $title, $diff) = ($1, $2, $3);
+      $title =~ s/\s+/ /g;
+      print "$id\t$title\t$diff\n";
+    }
+  ' 
+}
+
 {
   echo "METADATA"
   echo "TARGET_FOLDER: $TARGET_FOLDER"
@@ -23,5 +33,6 @@ INDEX_URL="https://leetcode.ca/all/problems.html"
   echo "SOLVED_IDS: $SOLVED_IDS"
   echo "OPTIONAL_CONSTRAINTS: $OPTIONAL_CONSTRAINTS"
   echo ""
-  curl -s "$INDEX_URL"
+  echo "INDEX_TSV"
+  curl -s "$INDEX_URL" | extract_index_tsv
 } | HOME="$REPO_FABRIC_HOME" fabric -p pick_next_leetcode_problem

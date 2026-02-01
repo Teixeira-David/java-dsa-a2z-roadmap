@@ -14,6 +14,17 @@ TARGET_TITLE="${2:-Two Sum}"
 COUNT="${3:-5}"
 SOLVED_IDS="${4:-}"
 OPTIONAL_CONSTRAINTS="${5:-Prefer HashMap-based; max 1 two-pointer variant.}"
+INDEX_URL="https://leetcode.ca/all/problems.html"
+
+extract_index_tsv() {
+  perl -0777 -ne '
+    while (/<tr[^>]*>\s*<td[^>]*>\s*(\d+)\s*<\/td>\s*<td[^>]*>\s*<a[^>]*>([^<]+)<\/a>\s*<\/td>\s*<td[^>]*>\s*(Easy|Medium|Hard)\s*<\/td>/sg) {
+      my ($id, $title, $diff) = ($1, $2, $3);
+      $title =~ s/\s+/ /g;
+      print "$id\t$title\t$diff\n";
+    }
+  '
+}
 
 {
     echo "METADATA"
@@ -23,5 +34,6 @@ OPTIONAL_CONSTRAINTS="${5:-Prefer HashMap-based; max 1 two-pointer variant.}"
     echo "SOLVED_IDS: $SOLVED_IDS"
     echo "OPTIONAL_CONSTRAINTS: $OPTIONAL_CONSTRAINTS"
     echo ""
-    curl -s "https://leetcode.ca/all/problems.html"
+    echo "INDEX_TSV"
+    curl -s "$INDEX_URL" | extract_index_tsv
 } | HOME="$REPO_FABRIC_HOME" fabric -p similar_problems_from_index
