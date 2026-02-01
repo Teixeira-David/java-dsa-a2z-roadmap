@@ -2,7 +2,12 @@
 set -euo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
-export XDG_CONFIG_HOME="$REPO_ROOT/automation"
+REPO_FABRIC_HOME="$REPO_ROOT/automation"
+export XDG_CONFIG_HOME="$REPO_FABRIC_HOME"
+FABRIC_CONFIG_DIR="$REPO_FABRIC_HOME/.config/fabric"
+mkdir -p "$FABRIC_CONFIG_DIR/patterns"
+cp -R "$REPO_FABRIC_HOME/fabric/patterns/." "$FABRIC_CONFIG_DIR/patterns/"
+touch "$FABRIC_CONFIG_DIR/.env"
 
 TARGET_FOLDER="${1:-hashing}"        # e.g. hashing, arrays, dp
 TARGET_TIER="${2:-easy}"             # easy|medium|hard|expert
@@ -19,5 +24,4 @@ INDEX_URL="https://leetcode.ca/all/problems.html"
   echo "OPTIONAL_CONSTRAINTS: $OPTIONAL_CONSTRAINTS"
   echo ""
   curl -s "$INDEX_URL"
-} | fabric -p pick_next_leetcode_problem
-
+} | HOME="$REPO_FABRIC_HOME" fabric -p pick_next_leetcode_problem

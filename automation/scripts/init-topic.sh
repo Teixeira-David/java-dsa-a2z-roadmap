@@ -7,105 +7,80 @@ REPO_ROOT="$(git rev-parse --show-toplevel)"
 BASE_DIR="${REPO_ROOT}/src/main/java/a2z/dsa"
 DOC_TEMPLATES="${REPO_ROOT}/docs/templates"
 
-TOPIC="${1:-}"
-if [[ -z "$TOPIC" ]]; then
-  echo "Usage: $0 <topic>"
-  echo "Example: $0 binarysearch"
+declare -A RECOMMENDED_SUBTOPICS=(
+  [arrays]="prefixsum kadane two_pointers cyclic_sort subarray_counting"
+  [binarysearch]="bounds rotated answer_space matrix"
+  [bit]="basics subsets xor bitmask_dp"
+  [bst]="traversals properties construction lca validation"
+  [greedy]="interval_scheduling activity_selection task_scheduling coin_change"
+  [hashing]="basics collision_resolution lc_design"
+  [linkedlist]="basics two_pointer cycle_detection merge_sort"
+  [math]="number_theory combinatorics geometry probability"
+  [sorting]="comparison_based non_comparison_based specialized"
+  [stackqueue]="basics monotonic_stack monotonic_queue expression_eval"
+  [strings]="two_pointers frequency parsing string_algorithms"
+  [recursion]="basics backtracking divide_conquer"
+  [slidingwindow]="fixed variable at_most_k deque_max_min"
+  [heaps]="top_k two_heaps scheduling"
+  [trees]="traversals properties paths lca bfs"
+  [graphs]="traversal bipartite topo shortest_path mst_dsu grid_graphs"
+  [dp]="intro one_d grid subsequence lis knapsack partition_mcm dp_on_trees"
+  [trie]="prefix word_search xor_trie"
+)
+
+usage() {
+  cat <<EOF >&2
+Usage: $0 <topic> <subtopic>
+Example: $0 arrays kadane
+       $0 dp subsequence
+Common subtopics:
+  arrays: ${RECOMMENDED_SUBTOPICS[arrays]}
+  binarysearch: ${RECOMMENDED_SUBTOPICS[binarysearch]}
+  trees: ${RECOMMENDED_SUBTOPICS[trees]}
+Use the list above (or your own subtopic) to keep README/problems/solutions grouped under src/main/java/a2z/dsa/<topic>/<subtopic>.
+EOF
   exit 1
+}
+
+TOPIC="${1:-}"
+SUBTOPIC="${2:-}"
+
+if [[ -z "$TOPIC" ]]; then
+  usage
+elif [[ -z "$SUBTOPIC" ]]; then
+  echo "Subtopics for $TOPIC: ${RECOMMENDED_SUBTOPICS[$TOPIC]:-basics}"
+  echo "Run '$0 $TOPIC <subtopic>' to scaffold that submodule."
+  usage
 fi
 
-TOPIC_DIR="${BASE_DIR}/${TOPIC}"
-
-# Create base topic directory
-mkdir -p "$TOPIC_DIR"
+TARGET_DIR="${BASE_DIR}/${TOPIC}/${SUBTOPIC}"
+mkdir -p "${TARGET_DIR}/solutions"
 
 # Create README.md + problems.md from templates if available, otherwise stub them
-if [[ -f "${DOC_TEMPLATES}/topic-readme.md" ]]; then
-  cp "${DOC_TEMPLATES}/topic-readme.md" "${TOPIC_DIR}/README.md"
-else
-  cat > "${TOPIC_DIR}/README.md" <<'EOF'
-# Topic
+README_TEMPLATE="${DOC_TEMPLATES}/topic-readme.md"
+PROBLEMS_TEMPLATE="${DOC_TEMPLATES}/problem-entry.md"
+README_TARGET="${TARGET_DIR}/README.md"
+PROBLEMS_TARGET="${TARGET_DIR}/problems.md"
 
-## ✅ Done means...
-- [ ] I can explain the core patterns
-- [ ] I can implement from scratch in Java
-- [ ] I can list edge cases
-- [ ] I can derive time/space complexity
-- [ ] I have tests for tricky cases
-
-## Patterns checklist
-- [ ] ...
-
-## Minimum canonical problems
-See `problems.md`.
+copy_if_missing() {
+  local template="$1" target="$2" stub="$3"
+  if [[ -f "$target" ]]; then
+    echo "$(basename "$target") exists; skipping"
+    return
+  fi
+  if [[ -f "$template" ]]; then
+    cp "$template" "$target"
+  else
+    cat > "$target" <<EOF
+$stub
 EOF
-fi
+  fi
+}
 
-if [[ -f "${DOC_TEMPLATES}/problem-entry.md" ]]; then
-  cp "${DOC_TEMPLATES}/problem-entry.md" "${TOPIC_DIR}/problems.md"
-else
-  cat > "${TOPIC_DIR}/problems.md" <<'EOF'
-# Problems
+README_STUB=$'# Subtopic\n\n## ✅ Done means...\n- [ ] I can explain the core patterns\n- [ ] I can implement from scratch in Java\n- [ ] I can list edge cases\n- [ ] I can derive time/space complexity\n- [ ] I have tests for tricky cases\n\n## Patterns checklist\n- [ ] ...\n\n## Minimum canonical problems\nSee `problems.md`.'
+PROBLEMS_STUB=$'# Problems\n\n## Easy\n- [ ] LC # — Title — Tags: — Why:\n\n## Medium\n- [ ] LC # — Title — Tags: — Why:\n\n## Hard\n- [ ] LC # — Title — Tags: — Why:\n\n## Expert\n- [ ] LC # — Title — Tags: — Why:'
 
-## Easy
-- [ ] LC # — Title — Tags: — Why:
+copy_if_missing "$README_TEMPLATE" "$README_TARGET" "$README_STUB"
+copy_if_missing "$PROBLEMS_TEMPLATE" "$PROBLEMS_TARGET" "$PROBLEMS_STUB"
 
-## Medium
-- [ ] LC # — Title — Tags: — Why:
-
-## Hard
-- [ ] LC # — Title — Tags: — Why:
-
-## Expert
-- [ ] LC # — Title — Tags: — Why:
-EOF
-fi
-
-# Always create a solutions folder
-mkdir -p "${TOPIC_DIR}/solutions"
-
-# Create recommended subdirectories for heavy topics
-case "$TOPIC" in
-  arrays)
-    mkdir -p "${TOPIC_DIR}/prefixsum" "${TOPIC_DIR}/kadane" "${TOPIC_DIR}/two_pointers" \
-             "${TOPIC_DIR}/cyclic_sort" "${TOPIC_DIR}/subarray_counting"
-    ;;
-  binarysearch)
-    mkdir -p "${TOPIC_DIR}/bounds" "${TOPIC_DIR}/rotated" "${TOPIC_DIR}/answer_space" "${TOPIC_DIR}/matrix"
-    ;;
-  strings)
-    mkdir -p "${TOPIC_DIR}/two_pointers" "${TOPIC_DIR}/frequency" "${TOPIC_DIR}/parsing" "${TOPIC_DIR}/string_algorithms"
-    ;;
-  recursion)
-    mkdir -p "${TOPIC_DIR}/basics" "${TOPIC_DIR}/backtracking" "${TOPIC_DIR}/divide_conquer"
-    ;;
-  stackqueue)
-    mkdir -p "${TOPIC_DIR}/basics" "${TOPIC_DIR}/monotonic_stack" "${TOPIC_DIR}/monotonic_queue" "${TOPIC_DIR}/expression_eval"
-    ;;
-  slidingwindow)
-    mkdir -p "${TOPIC_DIR}/fixed" "${TOPIC_DIR}/variable" "${TOPIC_DIR}/at_most_k" "${TOPIC_DIR}/deque_max_min"
-    ;;
-  heaps)
-    mkdir -p "${TOPIC_DIR}/top_k" "${TOPIC_DIR}/two_heaps" "${TOPIC_DIR}/scheduling"
-    ;;
-  trees)
-    mkdir -p "${TOPIC_DIR}/traversals" "${TOPIC_DIR}/properties" "${TOPIC_DIR}/paths" "${TOPIC_DIR}/lca" "${TOPIC_DIR}/bfs"
-    ;;
-  graphs)
-    mkdir -p "${TOPIC_DIR}/traversal" "${TOPIC_DIR}/bipartite" "${TOPIC_DIR}/topo" \
-             "${TOPIC_DIR}/shortest_path" "${TOPIC_DIR}/mst_dsu" "${TOPIC_DIR}/grid_graphs"
-    ;;
-  dp)
-    mkdir -p "${TOPIC_DIR}/intro" "${TOPIC_DIR}/one_d" "${TOPIC_DIR}/grid" "${TOPIC_DIR}/subsequence" \
-             "${TOPIC_DIR}/lis" "${TOPIC_DIR}/knapsack" "${TOPIC_DIR}/partition_mcm" "${TOPIC_DIR}/dp_on_trees"
-    ;;
-  trie)
-    mkdir -p "${TOPIC_DIR}/prefix" "${TOPIC_DIR}/word_search" "${TOPIC_DIR}/xor_trie"
-    ;;
-  *)
-    # light topics: no subdirs by default
-    ;;
-esac
-
-echo "Initialized topic structure at: ${TOPIC_DIR}"
-
+echo "Initialized topic structure at: ${TARGET_DIR}"

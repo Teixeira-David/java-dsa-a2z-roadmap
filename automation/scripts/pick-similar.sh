@@ -2,7 +2,12 @@
 set -euo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
-export XDG_CONFIG_HOME="$REPO_ROOT/automation"
+REPO_FABRIC_HOME="$REPO_ROOT/automation"
+export XDG_CONFIG_HOME="$REPO_FABRIC_HOME"
+FABRIC_CONFIG_DIR="$REPO_FABRIC_HOME/.config/fabric"
+mkdir -p "$FABRIC_CONFIG_DIR/patterns"
+cp -R "$REPO_FABRIC_HOME/fabric/patterns/." "$FABRIC_CONFIG_DIR/patterns/"
+touch "$FABRIC_CONFIG_DIR/.env"
 
 TARGET_ID="${1:-1}"
 TARGET_TITLE="${2:-Two Sum}"
@@ -19,4 +24,4 @@ OPTIONAL_CONSTRAINTS="${5:-Prefer HashMap-based; max 1 two-pointer variant.}"
     echo "OPTIONAL_CONSTRAINTS: $OPTIONAL_CONSTRAINTS"
     echo ""
     curl -s "https://leetcode.ca/all/problems.html"
-} | fabric -p similar_problems_from_index
+} | HOME="$REPO_FABRIC_HOME" fabric -p similar_problems_from_index

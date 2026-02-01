@@ -7,4 +7,4 @@ Thumbs.db
 .env.*
 tmp/
 temp/
-
+automation/.config/

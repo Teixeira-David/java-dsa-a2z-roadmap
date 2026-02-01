@@ -2,8 +2,13 @@
 set -euo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
-FABRIC_ROOT="${REPO_ROOT}/automation"
-export XDG_CONFIG_HOME="$FABRIC_ROOT"
+REPO_FABRIC_HOME="$REPO_ROOT/automation"
+FABRIC_ROOT="$REPO_FABRIC_HOME"
+export XDG_CONFIG_HOME="$REPO_FABRIC_HOME"
+FABRIC_CONFIG_DIR="$REPO_FABRIC_HOME/.config/fabric"
+mkdir -p "$FABRIC_CONFIG_DIR/patterns"
+cp -R "$REPO_FABRIC_HOME/fabric/patterns/." "$FABRIC_CONFIG_DIR/patterns/"
+touch "$FABRIC_CONFIG_DIR/.env"
 
 pattern="big_o_review"
 lang="java"
@@ -103,18 +108,12 @@ if [[ -n "$input_file" && ! -r "$input_file" ]]; then
   exit 1
 fi
 
+patterns_dir="${FABRIC_ROOT}/fabric/patterns"
 prompt_base="${pattern%%.*}"
-prompt_file=""
-for ext in txt md; do
-  candidate="${FABRIC_ROOT}/fabric/patterns/${prompt_base}.${ext}"
-  if [[ -f "$candidate" ]]; then
-    prompt_file="$candidate"
-    break
-  fi
-done
+pattern_dir="${patterns_dir}/${prompt_base}"
 
-if [[ -z "$prompt_file" ]]; then
-  echo "Fabric prompt '${pattern}' not found under ${FABRIC_ROOT}/fabric/patterns/." >&2
+if [[ ! -d "$pattern_dir" ]]; then
+  echo "Fabric prompt '${prompt_base}' not found under ${patterns_dir}/" >&2
   exit 1
 fi
 
@@ -140,7 +139,7 @@ run_pipeline() {
 }
 
 if [[ -n "$output_file" ]]; then
-  run_pipeline | fabric -p "$pattern_for_fabric" | tee "$output_file"
+  run_pipeline | HOME="$REPO_FABRIC_HOME" fabric -p "$pattern_for_fabric" | tee "$output_file"
 else
-  run_pipeline | fabric -p "$pattern_for_fabric"
+  run_pipeline | HOME="$REPO_FABRIC_HOME" fabric -p "$pattern_for_fabric"
 fi
