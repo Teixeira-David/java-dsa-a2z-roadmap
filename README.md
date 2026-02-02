@@ -45,17 +45,57 @@ A public, interview-focused Java roadmap that starts from **core Java fluency** 
 
 ## Automation layer
 
-- Patterns reside under `automation/fabric/patterns/<pattern>/system.md` (examples: `pick_next_leetcode_problem`, `similar_problems_from_index`, `big_o_review`, `plan_intake`).
-- Scripts can be piped with LeetCode index data via the repo-local Fabric config:
-- `automation/scripts/init-topic.sh` — scaffolds a canonical subtopic under `<topic>/<subtopic>/`.
-  - `automation/scripts/pick-next.sh` — selects the next canonical problem for a target folder/tier.
-  - `automation/scripts/pick-similar.sh` — returns `N` canonical problems related to a target problem.
-  - `automation/scripts/big-o.sh` — runs `big_o_review` on a solution file.
-  - `automation/scripts/update-pattern.sh` — inspects or installs the repo’s patterns into `~/.config/fabric`.
-- Fabric uses the repo-local config tree owned by the scripts. To configure vendors & default model without polluting your home directory:
+- Patterns live at `automation/fabric/patterns/<pattern>/system.md` (see `pick_next_leetcode_problem`, `similar_problems_from_index`, `big_o_review`, `plan_intake`, etc.).
+- Wrapper scripts mirror those patterns and copy them into `automation/.config/fabric/patterns/<pattern>` before invoking Fabric with `HOME="$(git rev-parse --show-toplevel)/automation"`.
+  - `automation/scripts/init-topic.sh` — scaffold a canonical `<topic>/<subtopic>/`.
+  - `automation/scripts/pick-next.sh` — stream the LeetCode index via TSV into `fabric -p pick_next_leetcode_problem`.
+  - `automation/scripts/pick-similar.sh` — pipe TSV + metadata into `fabric -p similar_problems_from_index`.
+  - `automation/scripts/big-o.sh` / `automation/scripts/big-o-discovery.sh` — run `fabric -p big_o_review` on a solution file.
+  - `automation/scripts/code-review.sh` — feed diffs/files into `fabric -p code_review`.
+  - `automation/scripts/plan-intake.sh` — send a short description to `fabric -p plan_intake`.
+  - `automation/scripts/portfolio-writeup.sh` — mix solution + problems with `fabric -p portfolio_writeup`.
+- Fabric uses the repo-local config tree under `automation/.config/fabric/`. Configure vendors/models via:
   ```bash
   HOME="$(git rev-parse --show-toplevel)/automation" fabric --setup
   ```
+
+  Once setup completes (check `automation/.config/fabric/.env` and `.../patterns/`), you can verify the repo-local catalog with:
+  ```bash
+  HOME="$(git rev-parse --show-toplevel)/automation" fabric -l
+  ```
+
+## Fabric automation (patterns + scripts)
+
+1. **Big-O discovery**
+   ```bash
+   bash automation/scripts/big-o-discovery.sh src/main/java/a2z/dsa/arrays/kadane/solutions/BestTimeToBuyAndSellStock.java
+   ```
+
+2. **Code review**
+   ```bash
+   git diff HEAD~1 | HOME="$(git rev-parse --show-toplevel)/automation" fabric -p code_review
+   ```
+
+3. **Plan intake**
+   ```bash
+   cat <<'EOF' | HOME="$(git rev-parse --show-toplevel)/automation" fabric -p plan_intake
+   Implement LC 167 (Two Sum II) in a2z/dsa/arrays/two_pointers with solution + tests.
+   EOF
+   ```
+
+4. **Portfolio writeup**
+   ```bash
+   {
+     cat src/main/java/a2z/dsa/arrays/two_pointers/solutions/TwoSumIIInputArrayIsSorted.java
+     echo
+     cat src/test/java/a2z/dsa/arrays/two_pointers/TwoSumIIInputArrayIsSortedTest.java
+   } | HOME="$(git rev-parse --show-toplevel)/automation" fabric -p portfolio_writeup
+   ```
+
+### Troubleshooting
+- `DEFAULT_VENDOR=, is not valid`: rerun the setup command above so Fabric records the configured vendor/model in `automation/.config/fabric/.env`.
+- Patterns not found? confirm each `automation/fabric/patterns/<pattern>/system.md` exists and let the script copy it into `automation/.config/fabric/patterns/`.
+- `timeout` command missing on macOS? install GNU coreutils (`brew install coreutils`) and use `gtimeout`, or rely on the JUnit `@Timeout` annotations already present.
 
 ## Docs + templates
 
